@@ -1,0 +1,68 @@
+name: Format Lint Test
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  flt-rust:
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: unicorn_user
+          POSTGRES_PASSWORD: magical_password
+          POSTGRES_DB: rainbow_database
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    runs-on: ubuntu-latest
+
+    env:
+      POSTGRES_USER: unicorn_user
+      POSTGRES_PASSWORD: magical_password
+      POSTGRES_DB: rainbow_database
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      RUST_LOG: warn
+      DATABASE_URL: postgres://unicorn_user:magical_password@localhost:5432/rainbow_database
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Fmt
+        uses: actions-rs/cargo@v1
+        continue-on-error: true
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Migrate Database
+        run: cargo run --bin migrate -- migrate
+        env:
+          SQLX_OFFLINE: true
+
+      - name: Lint
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace
