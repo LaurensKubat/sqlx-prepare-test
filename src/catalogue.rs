@@ -33,6 +33,8 @@ pub fn fetch_bids<'a, 'c, C: Executor<'c, Database = sqlx::Postgres> + 'c>(
     })
 }
 
+// small change for ci
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
