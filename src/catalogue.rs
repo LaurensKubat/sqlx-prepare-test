@@ -10,28 +10,28 @@ pub enum FetchBidError {
     Deserialize(#[from] serde_json::Error),
 }
 
-// pub fn fetch_bids<'a, 'c, C: Executor<'c, Database = sqlx::Postgres> + 'c>(
-//     conn: C,
-//     postal_code: &str,
-//     include_electricity: bool,
-//     include_gas: bool,
-//     include_heat: bool,
-//     include_internet: bool,
-// ) -> impl Stream<Item = Result<Bid, FetchBidError>> + 'c {
-//     sqlx::query_file!(
-//         "sql/fetch_bids.sql",
-//         postal_code,
-//         include_electricity,
-//         include_gas,
-//         include_heat,
-//         include_internet
-//     )
-//     .fetch(conn)
-//     .map(|r| match r {
-//         Ok(val) => Ok(serde_json::from_value(val.json.unwrap())?),
-//         Err(err) => Err(FetchBidError::Sqlx(err)),
-//     })
-// }
+pub fn fetch_bids<'a, 'c, C: Executor<'c, Database = sqlx::Postgres> + 'c>(
+    conn: C,
+    postal_code: &str,
+    include_electricity: bool,
+    include_gas: bool,
+    include_heat: bool,
+    include_internet: bool,
+) -> impl Stream<Item = Result<Bid, FetchBidError>> + 'c {
+    sqlx::query_file!(
+        "src/sql/fetch_bids.sql",
+        postal_code,
+        include_electricity,
+        include_gas,
+        include_heat,
+        include_internet
+    )
+    .fetch(conn)
+    .map(|r| match r {
+        Ok(val) => Ok(serde_json::from_value(val.json.unwrap())?),
+        Err(err) => Err(FetchBidError::Sqlx(err)),
+    })
+}
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

@@ -1,0 +1,27 @@
+{
+  "db": "PostgreSQL",
+  "228862531b01f4a7c91690a267a0fed106bb6517bcfe39f16c876418cb7cc1c3": {
+    "query": "WITH eb AS (\n    SELECT * FROM electricity_bids\n    WHERE\n            postal_code_lower < $1 AND\n            postal_code_upper > $1 AND\n            true = $2\n),\n\n     gb AS (\n         SELECT * FROM gas_bids\n         WHERE\n                 postal_code_lower < $1 AND\n                 postal_code_upper > $1 AND\n                 true = $3\n     ),\n\n     hb AS (\n         SELECT * FROM heat_bids\n         WHERE\n                 postal_code_lower < $1 AND\n                 postal_code_upper > $1 AND\n                 true = $4\n     ),\n\n     ib AS (\n         SELECT * FROM internet_bids\n         WHERE\n                 postal_code_lower < $1 AND\n                 postal_code_upper > $1 AND\n                 true = $5\n     )\n\nSELECT jsonb_strip_nulls(jsonb_agg(res)) as json\nFROM (\n         SELECT bids.id,\n                electricity_bid,\n                gas_bid,\n                heat_bid,\n                internet_bid,\n                ARRAY(SELECT db FROM discount_bids db WHERE bid_id = bids.id) AS discounts\n         FROM bids\n                  LEFT JOIN eb electricity_bid on bids.id = electricity_bid.id\n                  LEFT JOIN gb gas_bid on bids.id = gas_bid.id\n                  LEFT JOIN hb heat_bid on bids.id = heat_bid.id\n                  LEFT JOIN ib internet_bid on bids.id = internet_bid.id\n         WHERE electricity_bid.id IS NOT NULL\n            OR gas_bid.id IS NOT NULL\n            OR heat_bid.id IS NOT NULL\n            OR internet_bid.id IS NOT NULL\n     ) as res",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "json",
+          "type_info": "Jsonb"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Bool",
+          "Bool",
+          "Bool",
+          "Bool"
+        ]
+      },
+      "nullable": [
+        null
+      ]
+    }
+  }
+}
